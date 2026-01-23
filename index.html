@@ -5,18 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
-    <title>Snake Matrix V.4.2 Cyber Box</title>
+    <title>Snake Matri</title>
     
     <style>
         /* --- CORE COLORS & VARS (ROOT) --- */
-        :root { 
-            --neon: #00FF41;         /* Main Color */
-            --neon-dim: #003b00;     /* Dimmed/Darker Version */
-            --neon-bright: #ccffcc;  /* Brighter/Whiteish Version */
-            --bg-glass: rgba(0, 20, 0, 0.85);
-            --font-main: 'Courier New', monospace;
-        }
+        :root {
+  /* BASE NEON (ganti ini doang kalau mau ganti warna) */
+  --neon: #00FF41;
 
+  /* AUTO DERIVATIVES */
+  --neon-bright: color-mix(in srgb, var(--neon) 70%, white 30%);
+  --neon-dim: color-mix(in srgb, var(--neon) 35%, black 65%);
+
+  /* GLASS BACKGROUND */
+  --bg-glass: rgba(0, 20, 0, 0.85);
+
+  /* FONT */
+  --font-main: 'Courier New', monospace;
+}
+
+/* ========================= */
+/* NEON TEXT GLOW            */
+/* ========================= */
+.neon-text {
+  color: var(--neon);
+  font-family: var(--font-main);
+  text-shadow:
+    0 0 4px var(--neon-bright),
+    0 0 10px var(--neon),
+    0 0 20px var(--neon),
+    0 0 40px var(--neon-bright);
+}
+
+/* ========================= */
+/* NEON GLASS BOX            */
+/* ========================= */
+.neon-box {
+  background: var(--bg-glass);
+  border: 1px solid var(--neon);
+  box-shadow:
+    0 0 8px var(--neon),
+    0 0 20px var(--neon),
+    0 0 40px var(--neon-bright);
+  backdrop-filter: blur(6px);
+}
+
+/* ========================= */
+/* EXTRA GLOSS MODE (OPTIONAL) */
+/* ========================= */
+.neon-glossy {
+  filter: drop-shadow(0 0 12px var(--neon));
+}
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
