@@ -86,12 +86,6 @@
             z-index: 999; pointer-events: none; opacity: 0.6;
         }
 
-        .vignette {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
-            z-index: 998; pointer-events: none;
-        }
-
         /* --- UI CONTAINER --- */
         .game-wrapper {
             position: relative; z-index: 10;
@@ -293,7 +287,6 @@
 
     <canvas id="matrix-bg"></canvas>
     <div class="scanlines"></div>
-    <div class="vignette"></div>
 
     <div class="footer-container">
         <a href="https://t.me/+6283199753711" target="_blank" class="cyber-box-link">
@@ -344,6 +337,22 @@
     </div>
 
     <script>
+
+// --- NEW: INTEGRATED STORAGE MANAGER ---
+const GameCache = {
+    key: 'SNAKE_MATRIX_DATA',
+    load: function() {
+        const data = localStorage.getItem(this.key);
+        return data ? JSON.parse(data) : { highScore: 0, speed: 3, isMuted: false, musicMode: 0 };
+    },
+    save: function(updates) {
+        const current = this.load();
+        localStorage.setItem(this.key, JSON.stringify({ ...current, ...updates }));
+    }
+};
+
+const config = GameCache.load();
+
         // --- 1. ADVANCED AUDIO ENGINE (V.4.0 CYBER ACOUSTICS) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const actx = new AudioContext();
@@ -572,8 +581,10 @@
         window.addEventListener('resize', resize); resize();
 
         let snake=[], food={}, score=0, d, loop, timeInt, startTime, totalTime=0, isPaused=false, isGameRunning=false;
-        let highScore = localStorage.getItem('snakeHigh_Ult') || 0;
-        document.getElementById('highScore').innerText=highScore;
+let highScore = config.highScore;
+document.getElementById('highScore').innerText = highScore;
+document.getElementById('speedSlider').value = config.speed;
+
 
         function initGame() {
             resize();
@@ -607,13 +618,14 @@
                 document.getElementById('timeEl').innerText=`${m}:${s}`;
             }
         }
+function setSpeed(){
+    clearInterval(loop);
+    let val = parseInt(document.getElementById('speedSlider').value);
+    GameCache.save({ speed: val }); // Menyimpan speed ke storage lokal
+    let ms = 350 - ((val-1)*28);
+    loop = setInterval(draw, ms);
+}
 
-        function setSpeed(){
-            clearInterval(loop);
-            let val = parseInt(document.getElementById('speedSlider').value);
-            let ms = 350 - ((val-1)*28);
-            loop = setInterval(draw, ms);
-        }
 
         document.getElementById('speedSlider').addEventListener('input', ()=> { if(isGameRunning && !isPaused) setSpeed(); });
 
@@ -698,7 +710,11 @@
                 playSfx('eat'); 
                 document.getElementById('score').innerText=score;
                 updateTheme(score); // Trigger Root Update
-                if(score>highScore) { highScore=score; localStorage.setItem('snakeHigh_Ult', highScore); document.getElementById('highScore').innerText=highScore; }
+   if(score > highScore) { 
+    highScore = score; 
+    document.getElementById('highScore').innerText = highScore;
+    GameCache.save({ highScore: highScore }); 
+}
                 spawnFood();
             } else snake.pop();
             snake.unshift({x:sx, y:sy});
