@@ -5,74 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
-    <title>Snake Matrix</title>
+    <title>Snake Matrix - Pro Leaderboard</title>
     
     <style>
         /* --- CORE COLORS & VARS (ROOT) --- */
         :root {
-  /* BASE NEON (ganti ini doang kalau mau ganti warna) */
-  --neon: #00FF41;
+            --neon: #00FF41;
+            --neon-bright: color-mix(in srgb, var(--neon) 70%, white 30%);
+            --neon-dim: color-mix(in srgb, var(--neon) 35%, black 65%);
+            --bg-glass: rgba(0, 20, 0, 0.85);
+            --font-main: 'Courier New', monospace;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-  /* AUTO DERIVATIVES */
-  --neon-bright: color-mix(in srgb, var(--neon) 70%, white 30%);
-  --neon-dim: color-mix(in srgb, var(--neon) 35%, black 65%);
-
-  /* GLASS BACKGROUND */
-  --bg-glass: rgba(0, 20, 0, 0.85);
-
-  /* FONT */
-  --font-main: 'Courier New', monospace;
-}
-
-/* ========================= */
-/* NEON TEXT GLOW            */
-/* ========================= */
-.neon-text {
-  color: var(--neon);
-  font-family: var(--font-main);
-  text-shadow:
-    0 0 4px var(--neon-bright),
-    0 0 10px var(--neon),
-    0 0 20px var(--neon),
-    0 0 40px var(--neon-bright);
-}
-
-/* ========================= */
-/* NEON GLASS BOX            */
-/* ========================= */
-.neon-box {
-  background: var(--bg-glass);
-  border: 1px solid var(--neon);
-  box-shadow:
-    0 0 8px var(--neon),
-    0 0 20px var(--neon),
-    0 0 40px var(--neon-bright);
-  backdrop-filter: blur(6px);
-}
-
-/* ========================= */
-/* EXTRA GLOSS MODE (OPTIONAL) */
-/* ========================= */
-.neon-glossy {
-  filter: drop-shadow(0 0 12px var(--neon));
-}
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0; padding: 0;
             background-color: black;
-            color: var(--neon); /* Global Text Color derived from Root */
+            color: var(--neon);
             font-family: var(--font-main);
             overflow: hidden;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             height: 100vh;
             user-select: none;
-            transition: color 0.5s ease; /* Smooth Text Transition */
+            transition: color var(--transition);
         }
 
         /* --- VISUAL FX LAYERS --- */
-        
         canvas#matrix-bg {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -86,125 +47,212 @@
             z-index: 999; pointer-events: none; opacity: 0.6;
         }
 
+        .neon-text {
+            color: var(--neon);
+            font-family: var(--font-main);
+            text-shadow:
+                0 0 4px var(--neon-bright),
+                0 0 10px var(--neon),
+                0 0 20px var(--neon),
+                0 0 40px var(--neon-bright);
+        }
+
+        .neon-box {
+            background: var(--bg-glass);
+            border: 1px solid var(--neon);
+            box-shadow:
+                0 0 8px var(--neon),
+                0 0 20px var(--neon),
+                0 0 40px var(--neon-bright);
+            backdrop-filter: blur(6px);
+        }
+
         /* --- UI CONTAINER --- */
         .game-wrapper {
             position: relative; z-index: 10;
             display: flex; flex-direction: column; align-items: center;
             width: 98%; max-width: 700px;
-            margin-bottom: 0; /* Dinormalisasi karena footer sudah dihapus */
+            animation: slideUp 0.6s var(--transition);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* --- HUD --- */
         .hud-panel {
             width: 100%;
             background: var(--bg-glass);
-            border: 1px solid var(--neon); /* Uses Root */
-            border-bottom: none; border-radius: 4px 4px 0 0;
+            border: 1px solid var(--neon);
+            border-bottom: none; 
+            border-radius: 4px 4px 0 0;
             padding: 8px 12px;
             display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
             font-size: 12px; letter-spacing: 1px;
-            box-shadow: 0 0 15px var(--neon-dim); /* Uses Root */
+            box-shadow: 0 0 15px var(--neon-dim);
             backdrop-filter: blur(4px);
-            transition: border-color 0.5s, box-shadow 0.5s;
+            transition: border-color var(--transition), box-shadow var(--transition);
         }
-        .stat-item { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--neon-dim); padding-bottom: 2px; }
+
+        .stat-item { 
+            display: flex; justify-content: space-between; 
+            border-bottom: 1px dashed var(--neon-dim); 
+            padding-bottom: 2px; 
+        }
         .stat-lbl { color: var(--neon); font-weight: bold; opacity: 0.8; }
 
-        /* --- GAME CANVAS (SCREEN) --- */
+        /* --- GAME CANVAS --- */
         canvas#gameCanvas {
             background-color: rgba(0, 5, 0, 0.9);
-            border: 2px solid var(--neon); /* Uses Root */
+            border: 2px solid var(--neon);
             width: 100%; height: auto; aspect-ratio: 1/1;
             image-rendering: pixelated;
-            /* Animation now uses Variables to change color dynamically */
             animation: monitor-glow 4s infinite alternate;
-            transition: border-color 0.5s;
+            transition: border-color var(--transition);
+            touch-action: none;
         }
 
-        /* --- CONTROLS UI --- */
+        @keyframes monitor-glow { 
+            from { 
+                border-color: var(--neon-dim); 
+                box-shadow: 0 0 10px var(--neon-dim); 
+            } 
+            to { 
+                border-color: var(--neon); 
+                box-shadow: 0 0 30px var(--neon), inset 0 0 10px var(--neon-dim); 
+            } 
+        }
+
+        /* --- CONTROLS --- */
         .panel { 
             width: 100%; background: var(--bg-glass);
             border: 1px solid var(--neon); border-top: none;
-            border-radius: 0 0 4px 4px; padding: 10px;
+            border-radius: 0 0 4px 4px; 
+            padding: 10px;
             display: flex; flex-direction: column; gap: 8px;
             margin-bottom: 15px;
-            transition: border-color 0.5s;
+            transition: border-color var(--transition);
         }
         
         .settings-row {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0, 40, 0, 0.5); padding: 6px;
-            border: 1px solid var(--neon-dim); border-radius: 4px;
+            background: rgba(0, 40, 0, 0.5); 
+            padding: 6px;
+            border: 1px solid var(--neon-dim); 
+            border-radius: 4px;
         }
 
-        /* Buttons */
         .btn-ui {
-            background: #002200; border: 1px solid var(--neon); color: var(--neon);
-            padding: 8px 15px; cursor: pointer; border-radius: 2px;
-            font-family: var(--font-main); font-size: 11px; font-weight: bold;
-            transition: all 0.2s; text-transform: uppercase;
+            background: #002200; 
+            border: 1px solid var(--neon); 
+            color: var(--neon);
+            padding: 8px 15px; 
+            cursor: pointer; 
+            border-radius: 2px;
+            font-family: var(--font-main); 
+            font-size: 11px; 
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .btn-ui:active { background: var(--neon); color: black; box-shadow: 0 0 10px var(--neon); }
-        
-        .btn-music { flex-grow: 1; margin-right: 8px; text-align: center; }
 
-        input[type=range] { -webkit-appearance: none; width: 40%; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--neon-dim); }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 0; background: var(--neon); margin-top: -6px; box-shadow: 0 0 5px var(--neon); }
+        .btn-ui:active { 
+            background: var(--neon); 
+            color: black; 
+            box-shadow: 0 0 10px var(--neon); 
+        }
+
+        .btn-ui:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type=range] { 
+            -webkit-appearance: none; 
+            width: 40%; 
+            background: transparent; 
+        }
+
+        input[type=range]::-webkit-slider-runnable-track { 
+            width: 100%; 
+            height: 4px; 
+            background: var(--neon-dim); 
+        }
+
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            height: 16px; 
+            width: 16px; 
+            border-radius: 0; 
+            background: var(--neon); 
+            margin-top: -6px; 
+            box-shadow: 0 0 5px var(--neon); 
+        }
 
         /* --- JOYPAD --- */
         .joypad {
-            display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 8px; width: 240px;
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            width: 240px;
         }
         
         .btn-ctrl {
-            width: 75px; height: 65px;
+            width: 75px; 
+            height: 65px;
             background: rgba(0, 20, 0, 0.4);
             color: var(--neon); 
             border: 2px solid var(--neon);
             clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
             font-size: 28px;
-            display: flex; align-items: center; justify-content: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
             cursor: pointer;
             box-shadow: inset 0 0 10px var(--neon-dim);
-            transition: 0.1s;
+            transition: all 0.1s;
         }
+
         .btn-ctrl:active { 
-            background: var(--neon); color: black; 
+            background: var(--neon); 
+            color: black; 
             box-shadow: 0 0 25px var(--neon);
             transform: scale(0.96);
         }
 
         /* --- OVERLAY --- */
         #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0,0,0,0.95); 
+            z-index: 2000;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            animation: fadeIn 0.3s var(--transition);
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .glitch-title {
-            font-size: 3.5rem; font-weight: bold; text-align: center; 
-            margin-bottom: 30px; color: var(--neon);
-            /* Shadows now use variables to update with theme */
+            font-size: 3.5rem; 
+            font-weight: bold; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            color: var(--neon);
             text-shadow: 2px 2px 0px var(--neon-dim), -2px -2px 0px var(--neon-dim);
             animation: glitch-anim 2.5s infinite;
         }
-        
-        .btn-start {
-            padding: 15px 50px; border: 2px solid var(--neon); 
-            background: rgba(0,255,65,0.05); color: var(--neon); 
-            font-family: inherit; font-size: 18px; font-weight: bold; letter-spacing: 2px;
-            cursor: pointer; box-shadow: 0 0 15px var(--neon-dim);
-            transition: 0.3s;
-        }
-        .btn-start:hover { background: var(--neon); color: black; box-shadow: 0 0 40px var(--neon); }
 
-        /* KEYFRAMES USING VARS */
-        @keyframes monitor-glow { 
-            from { border-color: var(--neon-dim); box-shadow: 0 0 10px var(--neon-dim); } 
-            to { border-color: var(--neon); box-shadow: 0 0 30px var(--neon), inset 0 0 10px var(--neon-dim); } 
-        }
-        
         @keyframes glitch-anim {
             0% { transform: translate(0); }
             20% { transform: translate(-2px, 2px); }
@@ -212,6 +260,256 @@
             60% { transform: translate(2px, 2px); }
             80% { transform: translate(2px, -2px); }
             100% { transform: translate(0); }
+        }
+        
+        .btn-start {
+            padding: 15px 50px; 
+            border: 2px solid var(--neon); 
+            background: rgba(0,255,65,0.05); 
+            color: var(--neon); 
+            font-family: inherit; 
+            font-size: 18px; 
+            font-weight: bold; 
+            letter-spacing: 2px;
+            cursor: pointer; 
+            box-shadow: 0 0 15px var(--neon-dim);
+            transition: all var(--transition);
+            margin: 5px;
+        }
+
+        .btn-start:hover { 
+            background: var(--neon); 
+            color: black; 
+            box-shadow: 0 0 40px var(--neon); 
+        }
+
+        /* --- LEADERBOARD MODAL --- */
+        #leaderboardModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: slideDown 0.4s var(--transition);
+        }
+
+        @keyframes slideDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .leaderboard-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--bg-glass);
+            border: 2px solid var(--neon);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 30px var(--neon), inset 0 0 20px var(--neon-dim);
+            backdrop-filter: blur(10px);
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s var(--transition);
+        }
+
+        .leaderboard-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--neon);
+            padding-bottom: 15px;
+        }
+
+        .leaderboard-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--neon);
+            margin-bottom: 5px;
+        }
+
+        .leaderboard-tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--neon-dim);
+            background: rgba(0, 40, 0, 0.3);
+            color: var(--neon);
+            font-family: var(--font-main);
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--neon);
+            color: black;
+            box-shadow: 0 0 10px var(--neon);
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .rank-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 40, 0, 0.3);
+            border: 1px solid var(--neon-dim);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .rank-item:hover {
+            background: rgba(0, 60, 0, 0.5);
+            border-color: var(--neon);
+            box-shadow: 0 0 10px var(--neon-dim);
+        }
+
+        .rank-item.top-3 {
+            background: linear-gradient(90deg, rgba(0, 255, 65, 0.1) 0%, transparent 100%);
+            border-color: var(--neon);
+        }
+
+        .rank-number {
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .rank-number.top-1 { color: #FFD700; text-shadow: 0 0 10px #FFD700; }
+        .rank-number.top-2 { color: #C0C0C0; text-shadow: 0 0 10px #C0C0C0; }
+        .rank-number.top-3 { color: #CD7F32; text-shadow: 0 0 10px #CD7F32; }
+
+        .rank-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .rank-player {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .rank-device {
+            font-size: 9px;
+            opacity: 0.6;
+            font-family: monospace;
+        }
+
+        .rank-score {
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 0 0 5px var(--neon);
+        }
+
+        .leaderboard-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--neon-dim);
+            text-align: center;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .my-rank {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 255, 65, 0.05);
+            border: 1px solid var(--neon);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .my-rank-text {
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .close-modal-btn {
+            margin-top: 15px;
+            padding: 10px 30px;
+            border: 1px solid var(--neon);
+            background: rgba(0, 40, 0, 0.3);
+            color: var(--neon);
+            font-family: var(--font-main);
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            background: var(--neon);
+            color: black;
+        }
+
+        /* --- LOADING & STATUS --- */
+        .sync-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1999;
+            padding: 10px 15px;
+            background: var(--bg-glass);
+            border: 1px solid var(--neon-dim);
+            border-radius: 3px;
+            font-size: 10px;
+            opacity: 0;
+            animation: fadeInOut 3s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            20%, 80% { opacity: 1; }
+        }
+
+        .pulse {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--neon);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 600px) {
+            .game-wrapper { width: 100%; max-width: 100%; }
+            .glitch-title { font-size: 2rem; margin-bottom: 15px; }
+            .joypad { width: 100%; grid-template-columns: repeat(3, 1fr); }
+            .btn-ctrl { width: 100%; height: 50px; font-size: 20px; }
+            .leaderboard-container { max-height: 90vh; }
         }
     </style>
 </head>
@@ -223,10 +521,47 @@
     <div id="overlay">
         <div class="glitch-title">SNAKE<br>MATRIX</div>
         <div id="finalScoreDisplay" style="display:none; color:white; margin-bottom:20px; font-size:1.2rem;">
-            DATA: <span id="finalScoreVal" style="color:var(--neon)">0</span>
+            <span style="opacity:0.7">FINAL SCORE:</span> <span id="finalScoreVal" style="color:var(--neon); font-size:1.5rem;">0</span>
         </div>
-        <button class="btn-start" onclick="initGame()">MAIN</button>
-        <div style="margin-top:30px; font-size:12px; opacity:0.7">AUTHOR: Arlingツ</div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-start" onclick="initGame()">▶ MAIN</button>
+            <button class="btn-start" onclick="showLeaderboard()">🏆 BOARD</button>
+        </div>
+        <div style="margin-top:30px; font-size:12px; opacity:0.7">AUTHOR: Arlingツ | Device ID: <span id="deviceIdDisplay" style="font-family:monospace;">Loading...</span></div>
+    </div>
+
+    <!-- LEADERBOARD MODAL -->
+    <div id="leaderboardModal">
+        <div class="leaderboard-container">
+            <div class="leaderboard-header">
+                <div class="leaderboard-title">🏆 LEADERBOARD</div>
+                <div class="leaderboard-tabs">
+                    <button class="tab-btn active" onclick="switchLeaderboardTab('global', this)">Global</button>
+                    <button class="tab-btn" onclick="switchLeaderboardTab('local', this)">Local</button>
+                    <button class="tab-btn" onclick="loadLeaderboard()" title="Refresh">↻</button>
+                </div>
+            </div>
+
+            <div id="leaderboardContent" class="leaderboard-list">
+                <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                    <div class="pulse"></div>Memuat data...
+                </div>
+            </div>
+
+            <div class="my-rank" id="myRankDisplay" style="display:none;">
+                <div class="my-rank-text">📍 YOUR RANK</div>
+                <div style="font-size: 14px; font-weight: bold;">
+                    <span id="myRankNumber">-</span> • Score: <span id="myRankScore">0</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-footer">
+                <div>Last synced: <span id="lastSync">Never</span></div>
+                <div id="syncError" style="color: #FF6B6B; display: none; margin-top: 5px;">⚠ Sync failed</div>
+            </div>
+
+            <button class="close-modal-btn" onclick="hideLeaderboard()">CLOSE</button>
+        </div>
     </div>
 
     <div class="game-wrapper">
@@ -242,9 +577,9 @@
         <div class="panel">
             <div class="settings-row">
                 <button class="btn-ui btn-music" id="musicBtn" onclick="toggleMusicMode()">♫ TRACK: CYBER</button>
-                
                 <button class="btn-ui" id="muteBtn" onclick="toggleMute()">🔊</button>
                 <button class="btn-ui" style="margin-left:5px" onclick="togglePause()" id="pauseBtn">⏸</button>
+                <button class="btn-ui" style="margin-left:5px" id="leaderboardBtn" onclick="showLeaderboard()" title="View leaderboard">🏆</button>
             </div>
             
             <div class="settings-row">
@@ -262,39 +597,297 @@
         </div>
     </div>
 
+    <div class="sync-status" id="syncStatus"></div>
+
     <script>
+        // ============================================================
+        // PART 1: DEVICE FINGERPRINTING & CONFIG
+        // ============================================================
 
-// --- INTEGRATED STORAGE MANAGER ---
-const GameCache = {
-    key: 'SNAKE_MATRIX_DATA',
-    load: function() {
-        const data = localStorage.getItem(this.key);
-        return data ? JSON.parse(data) : { highScore: 0, speed: 3, isMuted: false, musicMode: 0 };
-    },
-    save: function(updates) {
-        const current = this.load();
-        localStorage.setItem(this.key, JSON.stringify({ ...current, ...updates }));
-    }
-};
+        const DeviceFingerprint = {
+            async generateId() {
+                const components = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    screen.colorDepth,
+                    new Date().getTimezoneOffset(),
+                    navigator.hardwareConcurrency || 'unknown',
+                    navigator.deviceMemory || 'unknown'
+                ].join('|');
 
-const config = GameCache.load();
+                const msgBuffer = new TextEncoder().encode(components);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                return hashHex.substring(0, 16).toUpperCase();
+            }
+        };
 
-        // --- 1. ADVANCED AUDIO ENGINE (V.4.0 CYBER ACOUSTICS) ---
+        const GameCache = {
+            key: 'SNAKE_MATRIX_DATA',
+            leaderboardKey: 'SNAKE_MATRIX_LEADERBOARD',
+            
+            load: function() {
+                const data = localStorage.getItem(this.key);
+                return data ? JSON.parse(data) : { 
+                    highScore: 0, 
+                    speed: 3, 
+                    isMuted: false, 
+                    musicMode: 0,
+                    deviceId: null,
+                    playerName: 'PLAYER'
+                };
+            },
+            
+            save: function(updates) {
+                const current = this.load();
+                localStorage.setItem(this.key, JSON.stringify({ ...current, ...updates }));
+            },
+
+            loadLeaderboard: function() {
+                const data = localStorage.getItem(this.leaderboardKey);
+                return data ? JSON.parse(data) : [];
+            },
+
+            saveLeaderboard: function(data) {
+                localStorage.setItem(this.leaderboardKey, JSON.stringify(data));
+            }
+        };
+
+        let config = GameCache.load();
+        let deviceId = config.deviceId;
+        let leaderboardData = { global: [], local: [], myRank: null };
+
+        // Initialize device ID
+        (async () => {
+            if (!deviceId) {
+                deviceId = await DeviceFingerprint.generateId();
+                config.deviceId = deviceId;
+                GameCache.save({ deviceId });
+            }
+            document.getElementById('deviceIdDisplay').innerText = deviceId;
+        })();
+
+        // ============================================================
+        // PART 2: SUPABASE INTEGRATION (CLIENT-SIDE)
+        // ============================================================
+
+        const SupabaseConfig = {
+            url: 'https://xanhsltfuelpblmyukbb.supabase.co',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbmhzbHRmdWVscGJsbXl1a2JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTA4MjEsImV4cCI6MjEwMTQ4NjgyMX0.2pdaiKods-ej6r6rXQ709pgyfC1ibFUcC0q7fccLmYk',
+            
+            // Table structure expected in Supabase:
+            // - id (uuid, primary key)
+            // - device_id (text, unique)
+            // - player_name (text)
+            // - score (integer)
+            // - created_at (timestamp)
+            // - synced_at (timestamp)
+
+            async submitScore(playerName, score) {
+                if (!this.isConfigured()) return null;
+                
+                try {
+                    const response = await fetch(`${this.url}/rest/v1/snake_leaderboard`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': this.anonKey,
+                            'Authorization': `Bearer ${this.anonKey}`
+                        },
+                        body: JSON.stringify({
+                            device_id: deviceId,
+                            player_name: playerName,
+                            score: score,
+                            created_at: new Date().toISOString()
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.updateSyncTime();
+                        return { success: true };
+                    } else {
+                        console.error('Supabase error:', response.status);
+                        return { success: false, error: response.statusText };
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async fetchLeaderboard(limit = 50) {
+                if (!this.isConfigured()) return [];
+                
+                try {
+                    const response = await fetch(
+                        `${this.url}/rest/v1/snake_leaderboard?select=*&order=score.desc&limit=${limit}`,
+                        {
+                            headers: {
+                                'apikey': this.anonKey,
+                                'Authorization': `Bearer ${this.anonKey}`
+                            }
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateSyncTime();
+                        return data;
+                    } else {
+                        console.error('Fetch error:', response.status);
+                        return [];
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    return [];
+                }
+            },
+
+            isConfigured() {
+                return this.url !== 'https://YOUR_PROJECT.supabase.co' && 
+                       this.anonKey !== 'YOUR_ANON_KEY';
+            },
+
+            updateSyncTime() {
+                localStorage.setItem('SNAKE_LAST_SYNC', new Date().toISOString());
+            },
+
+            getLastSyncTime() {
+                const lastSync = localStorage.getItem('SNAKE_LAST_SYNC');
+                if (!lastSync) return 'Never';
+                const date = new Date(lastSync);
+                return date.toLocaleTimeString();
+            }
+        };
+
+        // ============================================================
+        // PART 3: LEADERBOARD UI MANAGEMENT
+        // ============================================================
+
+        let currentLeaderboardTab = 'global';
+
+        async function loadLeaderboard() {
+            const content = document.getElementById('leaderboardContent');
+            content.innerHTML = '<div style="text-align: center; padding: 20px;"><div class="pulse"></div>Loading...</div>';
+
+            // Load local leaderboard
+            const localData = GameCache.loadLeaderboard().sort((a, b) => b.score - a.score).slice(0, 50);
+            leaderboardData.local = localData;
+
+            // Try to load global from Supabase
+            if (SupabaseConfig.isConfigured()) {
+                const globalData = await SupabaseConfig.fetchLeaderboard();
+                leaderboardData.global = globalData;
+                showSyncStatus('✓ Synced', false);
+            } else {
+                leaderboardData.global = localData; // Fallback
+                showSyncStatus('⚠ Offline mode', true);
+            }
+
+            // Show current tab
+            switchLeaderboardTab(currentLeaderboardTab);
+            updateLastSyncTime();
+        }
+
+        function switchLeaderboardTab(tab, btnEl) {
+            currentLeaderboardTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+
+            const data = tab === 'global' ? leaderboardData.global : leaderboardData.local;
+            renderLeaderboard(data);
+        }
+
+        function renderLeaderboard(data) {
+            const content = document.getElementById('leaderboardContent');
+            
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;">No scores yet</div>';
+                return;
+            }
+
+            let html = '';
+            data.forEach((entry, index) => {
+                const rank = index + 1;
+                const isTop3 = rank <= 3;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                
+                const playerName = entry.player_name || entry.playerName || 'UNKNOWN';
+                const score = entry.score;
+                const dId = entry.device_id || entry.deviceId || 'N/A';
+                const shortId = dId.length > 8 ? dId.substring(0, 4) + '...' + dId.substring(dId.length - 4) : dId;
+
+                html += `
+                    <div class="rank-item ${isTop3 ? 'top-3' : ''}">
+                        <div class="rank-number ${isTop3 ? `top-${rank}` : ''}">
+                            ${medal}
+                        </div>
+                        <div class="rank-info">
+                            <div class="rank-player">${playerName}</div>
+                            <div class="rank-device">ID: ${shortId}</div>
+                        </div>
+                        <div class="rank-score">${score.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+
+            // Show current player's rank
+            const myData = data.find(e => (e.device_id || e.deviceId) === deviceId);
+            const myRankDisplay = document.getElementById('myRankDisplay');
+            if (myData) {
+                const myRank = data.indexOf(myData) + 1;
+                document.getElementById('myRankNumber').innerText = myRank;
+                document.getElementById('myRankScore').innerText = myData.score.toLocaleString();
+                myRankDisplay.style.display = 'block';
+            } else {
+                myRankDisplay.style.display = 'none';
+            }
+        }
+
+        function showLeaderboard() {
+            document.getElementById('leaderboardModal').style.display = 'flex';
+            loadLeaderboard();
+        }
+
+        function hideLeaderboard() {
+            document.getElementById('leaderboardModal').style.display = 'none';
+        }
+
+        function updateLastSyncTime() {
+            document.getElementById('lastSync').innerText = SupabaseConfig.getLastSyncTime();
+        }
+
+        function showSyncStatus(message, isError = false) {
+            const status = document.getElementById('syncStatus');
+            status.innerHTML = message;
+            if (isError) {
+                status.style.color = '#FF6B6B';
+            } else {
+                status.style.color = 'var(--neon)';
+            }
+        }
+
+        // ============================================================
+        // PART 4: AUDIO ENGINE (Original, Optimized)
+        // ============================================================
+
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const actx = new AudioContext();
         
-        // Master Chain: Limiter -> Master Volume
         const limiter = actx.createDynamicsCompressor();
         limiter.threshold.value = -1.0; 
         limiter.knee.value = 0;
-        limiter.ratio.value = 20.0; // Hard limiting
+        limiter.ratio.value = 20.0;
         limiter.attack.value = 0.001;
         limiter.release.value = 0.1;
         
         const master = actx.createGain();
-        master.gain.value = 0.8; 
+        master.gain.value = 0.8;
         
-        // FX Bus: Stereo Delay
         const delayL = actx.createDelay();
         const delayR = actx.createDelay();
         const delayFb = actx.createGain();
@@ -305,12 +898,10 @@ const config = GameCache.load();
         delayFb.gain.value = 0.3;      
         delayMix.gain.value = 0.4;     
         
-        // Routing: Delay
         delayL.connect(delayFb); delayR.connect(delayFb);
         delayFb.connect(delayL); delayFb.connect(delayR);
         delayL.connect(delayMix); delayR.connect(delayMix);
         
-        // Routing: Master
         delayMix.connect(limiter);
         master.connect(limiter);
         limiter.connect(actx.destination);
@@ -319,7 +910,6 @@ const config = GameCache.load();
         let isMuted = false;
         let musicMode = 0; 
 
-        // SYNTHESIS FUNCTIONS
         function createOsc(freq, type, detune) {
             const osc = actx.createOscillator();
             osc.type = type;
@@ -349,7 +939,7 @@ const config = GameCache.load();
             osc1.connect(filter); osc2.connect(filter);
             filter.connect(gain);
             gain.connect(master);
-            if(isArp) gain.connect(delayL); 
+            if(isArp) gain.connect(delayL);
             
             osc1.start(t); osc2.start(t);
             osc1.stop(t + duration); osc2.stop(t + duration);
@@ -425,9 +1015,9 @@ const config = GameCache.load();
                     }
                 } else { 
                     if (step % 2 === 0) {
-                         const scale = [220, 261, 329, 392, 440, 523];
-                         const note = scale[Math.floor(Math.random()*scale.length)];
-                         playSynthTone(note, 0.1, 0.3, true);
+                        const scale = [220, 261, 329, 392, 440, 523];
+                        const note = scale[Math.floor(Math.random()*scale.length)];
+                        playSynthTone(note, 0.1, 0.3, true);
                     }
                 }
                 step++;
@@ -449,12 +1039,15 @@ const config = GameCache.load();
             if(isMuted) stopMusic(); else if(isGameRunning) startMusic();
         }
 
-        // --- 2. GAME LOGIC & ROOT THEME ---
+        // ============================================================
+        // PART 5: GAME LOGIC
+        // ============================================================
+
         const themes = [
             { main: '#00FF41', dim: '#003b00', bright: '#ccffcc' }, 
             { main: '#0088FF', dim: '#002255', bright: '#cceeff' }, 
             { main: '#FFFF00', dim: '#444400', bright: '#ffffcc' }, 
-            { main: '#0088FF', dim: '#002255', bright: '#cceeff' }, 
+            { main: '#FF00FF', dim: '#440044', bright: '#ffccff' }, 
             { main: '#FF0000', dim: '#440000', bright: '#ffcccc' }  
         ];
         
@@ -543,6 +1136,21 @@ const config = GameCache.load();
             else if(dir=='down' && d!='up') d='down';
         }
 
+        let touchStartX=0, touchStartY=0;
+        cvs.addEventListener('touchstart', e=>{
+            const t=e.changedTouches[0];
+            touchStartX=t.clientX; touchStartY=t.clientY;
+        }, {passive:true});
+
+        cvs.addEventListener('touchend', e=>{
+            const t=e.changedTouches[0];
+            const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY;
+            const absDx=Math.abs(dx), absDy=Math.abs(dy);
+            if(Math.max(absDx,absDy) < 24) return; // abaikan tap kecil
+            if(absDx > absDy) control(dx > 0 ? 'right' : 'left');
+            else control(dy > 0 ? 'down' : 'up');
+        }, {passive:true});
+
         document.addEventListener('keydown', e=>{
             let k=e.key.toLowerCase();
             if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
@@ -612,15 +1220,34 @@ const config = GameCache.load();
 
         function checkCol(x,y,arr) { for(let i=0;i<arr.length;i++) if(x==arr[i].x && y==arr[i].y) return true; return false; }
 
-        function gameOver(){
+        async function gameOver(){
             isGameRunning=false; clearInterval(loop); clearInterval(timeInt); stopMusic(); playSfx('crash');
+            
+            // Save to local leaderboard
+            const localLeaderboard = GameCache.loadLeaderboard();
+            localLeaderboard.push({
+                playerName: config.playerName,
+                score: score,
+                deviceId: deviceId,
+                timestamp: new Date().toISOString()
+            });
+            GameCache.saveLeaderboard(localLeaderboard.sort((a,b) => b.score - a.score));
+
+            // Try to submit to Supabase
+            if (SupabaseConfig.isConfigured()) {
+                await SupabaseConfig.submitScore(config.playerName, score);
+            }
+
             document.getElementById('overlay').style.display='flex';
             document.getElementById('finalScoreDisplay').style.display='block';
             document.getElementById('finalScoreVal').innerText=score;
             document.querySelector('.glitch-title').innerHTML="GAME<br>OVER";
         }
 
-        // --- 3. MATRIX RAIN ---
+        // ============================================================
+        // PART 6: MATRIX RAIN BACKGROUND
+        // ============================================================
+
         const mCv = document.getElementById("matrix-bg");
         const mCx = mCv.getContext("2d");
         let drops = [];
@@ -650,6 +1277,11 @@ const config = GameCache.load();
             }
         }
         setInterval(drawMatrix, 50);
+
+        // Close leaderboard on overlay click
+        document.getElementById('leaderboardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'leaderboardModal') hideLeaderboard();
+        });
 
     </script>
 </body>
