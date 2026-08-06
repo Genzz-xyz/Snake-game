@@ -527,7 +527,12 @@
             <button class="btn-start" onclick="initGame()">▶ MAIN</button>
             <button class="btn-start" onclick="showLeaderboard()">🏆 BOARD</button>
         </div>
-        <div style="margin-top:30px; font-size:12px; opacity:0.7">AUTHOR: Arlingツ | Device ID: <span id="deviceIdDisplay" style="font-family:monospace;">Loading...</span></div>
+        <div style="margin-top:20px; font-size:13px; display:flex; align-items:center; gap:8px;">
+            <span style="opacity:0.7">NAME:</span>
+            <span id="playerNameDisplay" style="color:var(--neon); font-weight:bold;">PLAYER</span>
+            <button class="btn-ui" style="padding:4px 10px; font-size:10px;" onclick="promptChangeName()">✎ EDIT</button>
+        </div>
+        <div style="margin-top:10px; font-size:12px; opacity:0.7">AUTHOR: Arlingツ | Device ID: <span id="deviceIdDisplay" style="font-family:monospace;">Loading...</span></div>
     </div>
 
     <!-- LEADERBOARD MODAL -->
@@ -667,7 +672,47 @@
                 GameCache.save({ deviceId });
             }
             document.getElementById('deviceIdDisplay').innerText = deviceId;
+            document.getElementById('playerNameDisplay').innerText = config.playerName || 'PLAYER';
         })();
+
+        function formatCooldown(seconds) {
+            const days = Math.ceil(seconds / 86400);
+            if (days >= 1) return `${days} hari lagi`;
+            const hours = Math.ceil(seconds / 3600);
+            return `${hours} jam lagi`;
+        }
+
+        async function promptChangeName() {
+            const current = config.playerName || 'PLAYER';
+            const input = prompt('Nama pemain (1-20 karakter):', current);
+            if (input === null) return;
+            const name = input.trim();
+            if (!name || name.length > 20) {
+                alert('Nama harus 1-20 karakter.');
+                return;
+            }
+            if (name === current) return;
+
+            if (!SupabaseConfig.isConfigured()) {
+                alert('Leaderboard global belum aktif, nama hanya tersimpan lokal.');
+                config.playerName = name;
+                GameCache.save({ playerName: name });
+                document.getElementById('playerNameDisplay').innerText = name;
+                return;
+            }
+
+            const result = await SupabaseConfig.updateName(name);
+            if (result.success) {
+                config.playerName = name;
+                GameCache.save({ playerName: name });
+                document.getElementById('playerNameDisplay').innerText = name;
+                alert('Nama berhasil diubah!');
+            } else if (result.cooldown) {
+                alert(`Nama baru bisa diganti lagi ${formatCooldown(result.cooldown)}.`);
+            } else {
+                alert('Gagal mengubah nama: ' + (result.error || 'unknown error'));
+            }
+        }
 
         // ============================================================
         // PART 2: SUPABASE INTEGRATION (CLIENT-SIDE)
@@ -689,7 +734,7 @@
                 if (!this.isConfigured()) return null;
                 
                 try {
-                    const response = await fetch(`${this.url}/rest/v1/snake_leaderboard`, {
+                    const response = await fetch(`${this.url}/rest/v1/rpc/rpc_submit_score`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -697,10 +742,9 @@
                             'Authorization': `Bearer ${this.anonKey}`
                         },
                         body: JSON.stringify({
-                            device_id: deviceId,
-                            player_name: playerName,
-                            score: score,
-                            created_at: new Date().toISOString()
+                            p_device_id: deviceId,
+                            p_player_name: playerName,
+                            p_score: score
                         })
                     });
 
@@ -713,6 +757,38 @@
                     }
                 } catch (error) {
                     console.error('Network error:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async updateName(newName) {
+                if (!this.isConfigured()) return { success: false, error: 'not configured' };
+
+                try {
+                    const response = await fetch(`${this.url}/rest/v1/rpc/rpc_update_name`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': this.anonKey,
+                            'Authorization': `Bearer ${this.anonKey}`
+                        },
+                        body: JSON.stringify({
+                            p_device_id: deviceId,
+                            p_new_name: newName
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.updateSyncTime();
+                        return { success: true };
+                    }
+
+                    const errBody = await response.json().catch(() => ({}));
+                    const msg = errBody.message || errBody.hint || '';
+                    const match = msg.match(/name_change_cooldown:([\d.]+)/);
+                    if (match) return { success: false, cooldown: parseFloat(match[1]) };
+                    return { success: false, error: msg || response.statusText };
+                } catch (error) {
                     return { success: false, error: error.message };
                 }
             },
