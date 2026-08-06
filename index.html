@@ -322,7 +322,23 @@
             backdrop-filter: blur(10px);
             max-height: 80vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
             animation: slideUp 0.4s var(--transition);
+        }
+
+        .scroll-hint {
+            text-align: center;
+            font-size: 10px;
+            color: var(--neon);
+            padding: 6px 0 0;
+            animation: bounceHint 1.2s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes bounceHint {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50% { transform: translateY(4px); opacity: 1; }
         }
 
         .leaderboard-header {
@@ -552,6 +568,7 @@
                     <div class="pulse"></div>Memuat data...
                 </div>
             </div>
+            <div class="scroll-hint" id="scrollHint">⌄ Geser untuk lihat lebih banyak ⌄</div>
 
             <div class="my-rank" id="myRankDisplay" style="display:none;">
                 <div class="my-rank-text">📍 YOUR RANK</div>
@@ -839,7 +856,7 @@
                 }
             },
 
-            async fetchLeaderboard(limit = 50) {
+            async fetchLeaderboard(limit = 100) {
                 if (!this.isConfigured()) return [];
                 
                 try {
@@ -976,6 +993,18 @@
                 myRankDisplay.style.display = 'block';
             } else {
                 myRankDisplay.style.display = 'none';
+            }
+
+            // Scroll helper untuk mobile - kasih tahu ada lebih banyak data di bawah
+            const hint = document.getElementById('scrollHint');
+            const container = document.querySelector('.leaderboard-container');
+            const isMobile = window.innerWidth <= 600;
+            if (isMobile && data.length > 8) {
+                hint.style.display = 'block';
+                const dismissHint = () => { hint.style.display = 'none'; };
+                container.addEventListener('scroll', dismissHint, { once: true, passive: true });
+            } else {
+                hint.style.display = 'none';
             }
         }
 
@@ -1199,13 +1228,24 @@
         // PART 5: GAME LOGIC
         // ============================================================
 
-        const themes = [
-            { main: '#00FF41', dim: '#003b00', bright: '#ccffcc' }, 
-            { main: '#0088FF', dim: '#002255', bright: '#cceeff' }, 
-            { main: '#FFFF00', dim: '#444400', bright: '#ffffcc' }, 
-            { main: '#FF00FF', dim: '#440044', bright: '#ffccff' }, 
-            { main: '#FF0000', dim: '#440000', bright: '#ffcccc' }  
+        // Hitung shade dim/bright otomatis, meniru rumus color-mix() di :root CSS
+        function mixShade(hex, ratio, mixWith) {
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            const blend = (c) => Math.round(c * ratio + mixWith * (1 - ratio));
+            return '#' + [blend(r), blend(g), blend(b)].map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        // 15 varian warna neon - ganti tiap ular makan
+        const themeColors = [
+            '#00FF41', '#0088FF', '#FFFF00', '#FF00FF', '#FF0000',
+            '#FF7F00', '#7FFF00', '#00FFD1', '#7F00FF', '#FF0080',
+            '#00FFFF', '#FFD700', '#ADFF2F', '#FF4500', '#DA70D6'
         ];
+        const themes = themeColors.map(c => ({
+            main: c,
+            dim: mixShade(c, 0.35, 0),
+            bright: mixShade(c, 0.7, 255)
+        }));
         
         let currentThemeIdx = 0;
         
