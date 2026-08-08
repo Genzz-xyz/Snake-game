@@ -643,6 +643,8 @@
             <div class="settings-row">
                 <button class="btn-ui btn-music" id="musicBtn" onclick="toggleMusicMode()">♫ TRACK: CYBER</button>
                 <button class="btn-ui" id="muteBtn" onclick="toggleMute()">🔊</button>
+                <audio id="audioTrack2" src="audio/spocks-cryo-bed.m4a" preload="none" loop></audio>
+                <audio id="audioTrack3" src="audio/aurora-dawn.m4a" preload="none" loop></audio>
                 <button class="btn-ui" style="margin-left:5px" onclick="togglePause()" id="pauseBtn">⏸</button>
                 <button class="btn-ui" style="margin-left:5px" id="leaderboardBtn" onclick="showLeaderboard()" title="View leaderboard">🏆</button>
                 <button class="btn-ui" style="margin-left:5px" id="settingsBtn" onclick="showSettings()" title="Pengaturan">⚙</button>
@@ -1127,7 +1129,47 @@
 
         let bgmInt = null;
         let isMuted = false;
-        let musicMode = 0; 
+        let musicMode = 0;
+
+        const musicTrackNames = ["CYBER", "CHAOS", "CRYO-BED", "AURORA DAWN"];
+        const fileAudios = [null, null, document.getElementById('audioTrack2'), document.getElementById('audioTrack3')];
+
+        // Defer & stage-load track file audio - tidak diunduh sampai browser idle,
+        // dan satu-satu (bertahap) supaya tidak rebutan bandwidth dengan aset game utama.
+        (function deferredPreloadAudio() {
+            const idle = window.requestIdleCallback || function(cb) { return setTimeout(cb, 300); };
+            const queue = fileAudios.filter(Boolean);
+            queue.forEach(el => {
+                el.addEventListener('error', () => console.warn('Gagal memuat track audio:', el.src));
+            });
+            let i = 0;
+            function loadNext() {
+                if (i >= queue.length) return;
+                const el = queue[i];
+                el.preload = 'auto';
+                el.load(); // eksplisit - Safari/iOS kadang tidak fetch cuma dari ganti atribut preload
+                i++;
+                idle(loadNext, { timeout: 2000 });
+            }
+            window.addEventListener('load', () => idle(loadNext, { timeout: 2000 }));
+        })();
+
+        function fadeAudioTo(el, target, duration) {
+            if (!el) return;
+            clearInterval(el._fadeInt);
+            const steps = 12;
+            const start = el.volume;
+            let s = 0;
+            el._fadeInt = setInterval(() => {
+                s++;
+                el.volume = Math.max(0, Math.min(1, start + (target - start) * (s / steps)));
+                if (s >= steps) {
+                    clearInterval(el._fadeInt);
+                    el.volume = target;
+                    if (target === 0) el.pause();
+                }
+            }, duration / steps);
+        }
 
         function createOsc(freq, type, detune) {
             const osc = actx.createOscillator();
@@ -1218,6 +1260,17 @@
             stopMusic();
             if(isMuted) return;
             if(actx.state==='suspended') actx.resume();
+
+            // Mode 2 & 3: track audio file asli, fade-in halus
+            if (musicMode === 2 || musicMode === 3) {
+                const el = fileAudios[musicMode];
+                if (!el) return;
+                el.currentTime = 0;
+                el.volume = 0;
+                el.play().catch(() => {}); // autoplay policy - aman karena dipanggil dari user gesture
+                fadeAudioTo(el, 0.6, 400);
+                return;
+            }
             
             let step = 0;
             const tempo = 110; 
@@ -1243,12 +1296,17 @@
             }, ms);
         }
 
-        function stopMusic() { if(bgmInt) clearInterval(bgmInt); }
+        function stopMusic() {
+            if(bgmInt) clearInterval(bgmInt);
+            fileAudios.forEach(el => {
+                if (el && !el.paused) fadeAudioTo(el, 0, 250);
+            });
+        }
         
         function toggleMusicMode() {
-            musicMode = (musicMode === 0) ? 1 : 0;
+            musicMode = (musicMode + 1) % 4;
             const btn = document.getElementById('musicBtn');
-            btn.innerText = (musicMode === 0) ? "♫ TRACK: CYBER" : "♫ TRACK: CHAOS";
+            btn.innerText = "♫ TRACK: " + musicTrackNames[musicMode];
             if(isGameRunning && !isPaused) startMusic();
         }
 
