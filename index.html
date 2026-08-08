@@ -527,12 +527,57 @@
             .btn-ctrl { width: 100%; height: 50px; font-size: 20px; }
             .leaderboard-container { max-height: 90vh; }
         }
+        /* ================================================================
+           TEMA SPESIAL 17 AGUSTUS - HUT RI KE-81 (temporary, revert setelah 18 Agt)
+           ================================================================ */
+        .merdeka-banner {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1500;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(206,17,38,0.95), rgba(206,17,38,0.55));
+            box-shadow: 0 2px 14px rgba(206,17,38,0.6);
+            overflow: hidden; white-space: nowrap;
+            padding: 4px 0;
+        }
+        .merdeka-banner .track {
+            display: inline-block;
+            color: #fff; font-weight: bold; font-size: 11px; letter-spacing: 2px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+            animation: buntingScroll 22s linear infinite;
+        }
+        @keyframes buntingScroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+
+        #fxCv {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5; pointer-events: none;
+        }
+
+        .merdeka-toast {
+            position: fixed; top: 60px; left: 50%; z-index: 2500;
+            transform: translateX(-50%) translateY(-10px);
+            background: linear-gradient(135deg, #CE1126, #8f0c1a);
+            color: #fff; padding: 10px 20px; border-radius: 8px;
+            font-family: var(--font-main); font-weight: bold; font-size: 13px;
+            box-shadow: 0 4px 24px rgba(206,17,38,0.7);
+            opacity: 0; pointer-events: none; text-align: center;
+            transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+        .merdeka-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        /* ================================================================ */
     </style>
 </head>
 <body>
 
     <canvas id="matrix-bg"></canvas>
     <div class="scanlines"></div>
+
+    <!-- TEMA SPESIAL 17 AGUSTUS - HUT RI KE-81 (hapus/git revert setelah 18 Agustus) -->
+    <div class="merdeka-banner">
+        <span class="track">🇮🇩&nbsp; DIRGAHAYU REPUBLIK INDONESIA KE-81 &nbsp;🇮🇩&nbsp; 17 AGUSTUS 1945 – 2026 &nbsp;🇮🇩&nbsp; INDONESIA BERDAULAT, ADIL, DAN MAKMUR &nbsp;🇮🇩&nbsp; MERDEKA! &nbsp;🇮🇩&nbsp; DIRGAHAYU REPUBLIK INDONESIA KE-81 &nbsp;🇮🇩&nbsp; 17 AGUSTUS 1945 – 2026 &nbsp;🇮🇩&nbsp; INDONESIA BERDAULAT, ADIL, DAN MAKMUR &nbsp;🇮🇩&nbsp; MERDEKA! &nbsp;🇮🇩&nbsp;</span>
+    </div>
+    <canvas id="fxCv"></canvas>
 
     <div id="overlay">
         <div class="glitch-title">SNAKE<br>MATRIX</div>
@@ -1341,6 +1386,88 @@
         
         let currentThemeIdx = 0;
         
+        // ============================================================
+        // TEMA SPESIAL 17 AGUSTUS - HUT RI KE-81
+        // (blok mandiri - hapus/git revert setelah 18 Agustus)
+        // ============================================================
+        const fxCv = document.getElementById('fxCv');
+        const fxCx = fxCv.getContext('2d');
+        function resizeFx() { fxCv.width = window.innerWidth; fxCv.height = window.innerHeight; }
+        window.addEventListener('resize', resizeFx); resizeFx();
+
+        let fxParticles = [];
+        const MERDEKA_COLORS = ['#CE1126', '#FFFFFF', '#FF5A5A', '#FFD700'];
+
+        function spawnFirework(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+                const speed = 2 + Math.random() * 3.5;
+                fxParticles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1,
+                    color: MERDEKA_COLORS[Math.floor(Math.random() * MERDEKA_COLORS.length)],
+                    size: 2 + Math.random() * 2
+                });
+            }
+        }
+
+        function tickFireworks() {
+            fxCx.clearRect(0, 0, fxCv.width, fxCv.height);
+            for (let i = fxParticles.length - 1; i >= 0; i--) {
+                const p = fxParticles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life -= 0.02;
+                if (p.life <= 0) { fxParticles.splice(i, 1); continue; }
+                fxCx.globalAlpha = Math.max(0, p.life);
+                fxCx.fillStyle = p.color;
+                fxCx.beginPath();
+                fxCx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                fxCx.fill();
+            }
+            fxCx.globalAlpha = 1;
+            requestAnimationFrame(tickFireworks);
+        }
+        requestAnimationFrame(tickFireworks);
+
+        function cellToScreen(gx, gy) {
+            const rect = cvs.getBoundingClientRect();
+            return { x: rect.left + gx + box / 2, y: rect.top + gy + box / 2 };
+        }
+
+        function showMerdekaToast(msg) {
+            let t = document.getElementById('merdekaToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'merdekaToast';
+                t.className = 'merdeka-toast';
+                document.body.appendChild(t);
+            }
+            t.innerText = msg;
+            t.classList.add('show');
+            clearTimeout(t._hideT);
+            t._hideT = setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        // Event makanan power-up "PESTA KEMERDEKAAN": 3 makanan bonus muncul sekaligus,
+        // setiap kelipatan 8 skor, hilang kalau tidak diambil dalam 6 detik.
+        let bonusFoods = [];
+
+        function spawnBonusFoods(count) {
+            bonusFoods = [];
+            let tries = 0;
+            while (bonusFoods.length < count && tries < 200) {
+                tries++;
+                const bx = Math.floor(Math.random() * gridSize) * box;
+                const by = Math.floor(Math.random() * gridSize) * box;
+                const occupied = snake.some(s => s.x === bx && s.y === by)
+                    || (food.x === bx && food.y === by)
+                    || bonusFoods.some(b => b.x === bx && b.y === by);
+                if (!occupied) bonusFoods.push({ x: bx, y: by, expires: Date.now() + 6000 });
+            }
+            showMerdekaToast('🎉 PESTA KEMERDEKAAN! Ambil bonus sebelum waktu habis!');
+        }
+
         function updateTheme(sc) {
             let idx = sc % themes.length;
             currentThemeIdx = idx;
@@ -1378,6 +1505,7 @@
             
             snake=[{x:10*box, y:10*box}];
             d="right"; score=0; totalTime=0; isPaused=false; isGameRunning=true;
+            bonusFoods = []; // reset event kemerdekaan
             
             updateTheme(0); 
             
@@ -1474,6 +1602,17 @@
             ctx.fillRect(food.x+2, food.y+2, box-4, box-4);
             ctx.shadowBlur=0;
 
+            // Render bonus food event "PESTA KEMERDEKAAN" - merah putih berkedip
+            const nowT = Date.now();
+            bonusFoods = bonusFoods.filter(b => b.expires > nowT);
+            bonusFoods.forEach(b => {
+                const blink = Math.sin(nowT / 120) > 0;
+                ctx.shadowBlur = 16; ctx.shadowColor = '#CE1126';
+                ctx.fillStyle = blink ? '#CE1126' : '#FFFFFF';
+                ctx.fillRect(b.x + 3, b.y + 3, box - 6, box - 6);
+                ctx.shadowBlur = 0;
+            });
+
             for(let i=0; i<snake.length; i++){
                 ctx.fillStyle = (i==0) ? t.bright : t.main;
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
@@ -1491,19 +1630,49 @@
 
             if(checkCol(sx,sy,snake)) { gameOver(); return; }
 
-            if(sx==food.x && sy==food.y) {
+            const bonusIdx = bonusFoods.findIndex(b => b.x===sx && b.y===sy);
+
+            if (bonusIdx !== -1) {
+                bonusFoods.splice(bonusIdx, 1);
+                score += 5;
+                playSfx('eat');
+                document.getElementById('score').innerText=score;
+                updateTheme(score);
+                const pt = cellToScreen(sx, sy);
+                spawnFirework(pt.x, pt.y, 28);
+                showMerdekaToast('🇮🇩 +5 MERDEKA!');
+                if(score > highScore) {
+                    highScore = score;
+                    document.getElementById('highScore').innerText = highScore;
+                    GameCache.save({ highScore: highScore });
+                    spawnFirework(pt.x, pt.y, 20);
+                    showMerdekaToast('🏆 REKOR BARU!');
+                }
+                snake.unshift({x:sx, y:sy});
+            } else if(sx==food.x && sy==food.y) {
                 score++; 
                 playSfx('eat'); 
                 document.getElementById('score').innerText=score;
                 updateTheme(score); 
+                const pt = cellToScreen(sx, sy);
+                spawnFirework(pt.x, pt.y, 10);
                 if(score > highScore) { 
                     highScore = score; 
                     document.getElementById('highScore').innerText = highScore;
                     GameCache.save({ highScore: highScore }); 
+                    spawnFirework(pt.x, pt.y, 20);
+                    showMerdekaToast('🏆 REKOR BARU!');
                 }
                 spawnFood();
-            } else snake.pop();
-            snake.unshift({x:sx, y:sy});
+                if (score % 8 === 0 && bonusFoods.length === 0) {
+                    spawnBonusFoods(3);
+                    spawnFirework(pt.x, pt.y, 40);
+                }
+                snake.unshift({x:sx, y:sy});
+            } else {
+                snake.pop();
+                snake.unshift({x:sx, y:sy});
+            }
         }
 
         function checkCol(x,y,arr) { for(let i=0;i<arr.length;i++) if(x==arr[i].x && y==arr[i].y) return true; return false; }
